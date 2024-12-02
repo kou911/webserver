@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Linuxでwebサーバー構築</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="初めに">LinuxでWebサーバー構築を行う</h1>
+<h2 id="対象者">対象者</h2>
+<p>この資料はWindowsPCを使用している初学者のうち、「コマンドプロンプト」と言われて何か理解出来る人を対象にしています。そのためWindowsPCと同様の操作や基本的な知識については解説しません、ご了承ください。</p>
+<h2 id="目的">目的</h2>
+<p>この資料では、購入した直後の状態のPCにLinuxOSをインストールし、サーバーのセットアップからwebサーバーの構築までを行います。サーバーのセキュリティなどについては深く触れませんので各自で検索してください。<br>
+資料内ではubuntuを使用しますので、他のディストリビューションを使用する場合は適宜読み替えてください。</p>
+<h2 id="使用した機材">使用した機材</h2>
+<p>GateWayPC(初期OS：Windows)
+個人用PC(Fujitsuノートブック)</p>
+<h1 id="linuxのインストール">Linuxのインストール</h1>
+<h2 id="linuxとは">Linuxとは</h2>
+<p>OSの一つです。導入コストがかからないこと、低スペックのデバイスでも使えること、柔軟性が高く、カスタマイズがしやすいことなどがLinuxの特徴として挙げられます。インストールの際には、ディストリビューションというLinuxのコアとなるカーネルとその他のOS構成要素を組み合わせた物を使います。</p>
+<h2 id="そもそもなんでlinux">そもそもなんでLinux？</h2>
+<p>Windowsでいいじゃん！使い慣れてるし！って声もあると思います。<br>
+しかしサーバー構築においては、Linuxの方が都合が良いことが多いです。</p>
+<ul>
+<li>柔軟性が高いためカスタマイズがしやすい</li>
+<li>導入コストがかからず、サーバー構築も無料</li>
+<li>構成がシンプルなためセキュリティの脆弱性を減らしやすい</li>
+<li>構成がシンプルなためデータ処理にリソースを回せ、結果としてデータ処理能力が高い</li>
+<li>構成がシンプルなため問題が発生した際に状況や原因の特定が容易</li>
+<li>サーバーソフトウェアの選択肢が多い</li>
+</ul>
+<p>これらの理由から、サーバー構築ではLinuxが主に利用されます。</p>
+<h2 id="ubuntuのインストール">ubuntuのインストール</h2>
+<p>ではそんなLinuxをインストールしていきましょう。ここではディストリビューションとしてubuntuを使用します。USBメモリを使用するので準備をお願いします。<br>
+<a href="https://jp.ubuntu.com/download">https://jp.ubuntu.com/download</a><br>
+<a href="https://rufus.ie/ja/">https://rufus.ie/ja/</a><br>
+上記のURLよりubuntuとrafusをダウンロードしてください。rafusを開いてインストールしたubuntuのISOファイル(.iso)を選択し実行します。rafusによりubuntuのインストールのためのUSBメモリを作成することが出来ます。環境を構築したいPCでこのUSBメモリを実行することでubuntuのインストールが出来ますが、機種によって起動方法が違うようなのでここでは省略します。「🔍usb ブート linux {機種名}」などで検索すれば大抵は解説しているサイトがヒットしますので、そちらを参照しUSBメモリを実行してください。<br>
+<img src=".\install.jpg" width="50%"><br>
+実行しますとこのような画面が表示されます。Try or Install Ubuntuを選択し、Enterを押してUbuntuのインストール画面に移動します。基本的には表示されている通りに進めていけば大丈夫です。途中で現在入っているOSを破棄するかどうか聞かれますが、使用するPCをサーバー専用とするなら破棄しても問題ないです。<br>
+<img src=".\main.jpg" width="50%"><br>
+このような画面が表示されればインストールは完了です。</p>
+<h3 id="トラブルシューティング">トラブルシューティング</h3>
+<p>この際上手く起動できない事がありますが、先ほど検索したブート画面を再度表示し起動順を変更することで改善されます。USBが一番最初に起動されるように順番を変更し、再度試してみてください。</p>
+<h1 id="linuxの基本操作">Linuxの基本操作</h1>
+<h2 id="ファイル">ファイル</h2>
+<p>Linuxのファイルやディレクトリ(Windowsのフォルダに相当します)は基本的にWindowsと似た構造になっています。<br>
+また、デフォルトのディレクトリがいくつか存在しますがWindowsと違いアクセスしやすい場所にあるので、間違えて書き換えないように注意してください。<br>
+パスの表記方法も基本的には同じで、相対パスでは一つ上の階層を「..」と表します。</p>
+<h2 id="コマンド操作">コマンド操作</h2>
+<p>Linuxでは基本的にターミナル(コマンドプロンプトのようなもの)によってコマンドを実行して操作します。<br>
+コマンドについては検索すれば出てくるので、本資料で頻出するコマンドのみ紹介します。<br>
+なお、環境によってはターミナルは「端末」という名称で表示される場合もあります。</p>
+<ul>
+<li><code>sudo</code><br>
+コマンドの最初につけて使用します。管理者権限でコマンドを実行します。</li>
+<li><code>touch {新規ファイルパス}</code><br>
+ファイルを作成します。</li>
+<li><code>mkdir -p {新規ディレクトリパス}</code><br>
+ディレクトリを作成します。-pをつけることで、複数構造のディレクトリも作成出来ます。</li>
+<li><code>chmod {アクセス権} {ファイルパス}</code><br>
+ファイルパスの権限を変更します。アクセス権は数字か記号で指定します。<br>
+読み取り権 = 4<br>
+書き込み権 = 2<br>
+実行権　　 = 1<br>
+とし、有効化する権限の数字を全て足した物がユーザーの権限となります。<br>
+所有者,所有グループ,その他ユーザーの順にその数字を並べた物をコマンドに入力します。<br>
+例)<br>
+764<br>
+所有者：読み取り、書き込み、実行<br>
+所有グループ：読み取り、書き込み<br>
+その他ユーザー：読み取り</li>
+</ul>
+<h1 id="webサーバー構築">webサーバー構築</h1>
+<h2 id="関連ソフトウェアのインストールと起動">関連ソフトウェアのインストールと起動</h2>
+<p>本資料ではapacheを使用します。オープンソースで、無料で利用出来ます。</p>
+<pre><code>$ sudo apt update
+$ sudo apt -y install apache2
+</code></pre>
+<p>上記のコードをターミナルから実行することでインストールが出来ます。1行目でパッケージの更新を行い、2行目でインストールを行っています。<br>
+インストールが完了したら、続いてapacheの起動に移ります。</p>
+<pre><code>$ sudo systemctl start apache2
+$ sudo systemctl enable apache2
+$ sudo systemctl status apache2
+</code></pre>
+<p>1行目で起動を、2行目で自動起動の有効化を、3行目で現在の状況の表示を行っています。3行目を実行し、以下のようなステータスが表示されれば起動は完了です。</p>
+<pre><code>● apache2.service - The Apache HTTP Server
+Loaded: loaded (/lib/systemd/system/apache2.service; enabled; vendor
+preset: enabled)
+Active: active (running) since Wed 2024-07-10 06:25:37 JST; 9h ago
+Docs: https://httpd.apache.org/docs/2.4/
+Main PID: 202028 (apache2)
+Tasks: 55 (limit: 9098)
+Memory: 20.8M
+CGroup: /system.slice/apache2.service
+├─202028 /usr/sbin/apache2 -k start
+├─202030 /usr/sbin/apache2 -k start
+└─202031 /usr/sbin/apache2 -k start
+Jul 10 06:25:37 ホスト名 systemd[1]: Starting The Apache HTTP Server...
+Jul 10 06:25:37 ホスト名 systemd[1]: Started The Apache HTTP Server.
+</code></pre>
+<p><code>http://localhost</code>にアクセスし、Apacheのウェルカムページが表示されればサーバー構築が完了しています。</p>
+<h2 id="表示するコンテンツの作成">表示するコンテンツの作成</h2>
+<p>当然ソフトウェアのウェルカムページが表示されるだけではwebサーバーとして使い物にならないので、コンテンツの作成を行います。<br>
+まずは作業ディレクトリ(DocumentRoot)を作成します。コマンドで作成する場合は、mkdirコマンドを使用します。<br>
+作成したディレクトリ内に、以下のコマンドでファイルを作成します。ディレクトリパスは先ほど作成したディレクトリパスと、ファイル名は任意のファイル名とします。</p>
+<pre><code>$ sudo touch ディレクトリパス/ファイル名.html
+</code></pre>
+<p>ファイル内にサンプルとして以下の内容を記述します。表示したいページが既に決まっている場合は、そのhtmlを記述しても構いません。アクセス権の兼ね合いで編集出来ない場合は、chmodコマンドを使いアクセス権を変更してください。</p>
+<pre><code>&lt;html&gt;
+    &lt;body&gt;
+        &lt;h1&gt;Welcome to my page&lt;/h1&gt;
+    &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h2 id="サーバー設定">サーバー設定</h2>
+<p>作成したコンテンツの表示をするためのサーバー設定を行います。<br>
+設定ファイルは<code>/etc/apache2/apache2.conf</code>や<code>/etc/apache/sites-available/000-default.conf</code>となる。<br>
+前者はグローバル設定(サーバー全体に適用される設定)、後者はwebページに関する設定となる。ただし、この資料では後者のファイルは使わず、新たに設定ファイルを作成します。<br>
+以下のコマンドを実行し、設定ファイルを作成します。{ファイル名}は任意のファイル名を設定してください。</p>
+<pre><code>$ sudo touch /etc/apache2/sites-available/{ファイル名}.conf
+</code></pre>
+<p>このファイルを編集していきます。vimという機能を使った編集が主となりますが、慣れていないと編集に手間取るのでテキストエディタで編集します。<br>
+vimについて気になる場合は「🔍vim Linux」などで検索すれば解説しているサイトがヒットします。</p>
+<pre><code>$ sudo chmod 666 /etc/apache2/sites-available/{ファイル名}.conf
+</code></pre>
+<p>全てのユーザーがテキストエディタでファイルに変更を加えられるようになります。当然セキュリティ上の脆弱性となり得るので、編集後セキュリティを変更することを忘れないようにしましょう。<br>
+ディレクトリから作成したファイルを開き、以下の内容を記述します。</p>
+<pre><code>&lt;VirtualHost *:80&gt;
+ServerAdmin webmaster@localhost
+DocumentRoot {ディレクトリパス}
+DirectoryIndex {ファイル名}.html
+ErrorLog ${APACHE_LOG_DIR}/error.log
+CustomLog ${APACHE_LOG_DIR}/access.log combined
+&lt;/VirtualHost&gt;
+</code></pre>
+<p>ディレクトリパスは先の項で作成したディレクトリを、ファイル名も同じく作成したファイル名を記述します。<br>
+編集が終わりましたら、必要に応じて以下のコマンドでアクセス権を変更します。以下のコマンドで、所有者以外がファイルの変更が出来なくなります。</p>
+<pre><code>$ sudo chmod 644 /etc/apache2/sites-available/{ファイル名}.conf
+</code></pre>
+<p>以下のコマンドを順に実行し設定を適用します。</p>
+<pre><code>$ sudo a2dissite 000-default.conf
+$ sudo a2ensite {ファイル名}.conf
+$ sudo systemctl reload apache2
+</code></pre>
+<p>1行目でデフォルトの設定の無効化を、2行目で作成した設定ファイルの有効化を、3行目でapacheの再起動を行っています。<br>
+webサーバーへのアクセスを許可するために、ファイアウォールの設定を変更します。</p>
+<pre><code>$ sudo ufw enable
+$ sudo ufw allow ‘Apache’
+$ sudo ufw allow 80/tcp
+$ sudo ufw status
+</code></pre>
+<p>上記のコマンドは、1行目でファイアウォールの有効化を、2行目と3行目で80番ポートの開放を、4行目でステータスの確認を行っています。正しく設定出来ていれば以下のようなステータスが表示されます。</p>
+<pre><code>Status: active
+
+To Action From
+-- ------ ----
+Apache ALLOW Anywhere
+Apache (v6) ALLOW Anywhere (v6)
+</code></pre>
+<p>localhostに再びアクセスし、設定したページが表示されていればサーバー構築は完了です。</p>
+<h3 id="その他の設定">その他の設定</h3>
+<p>パスワードを入力しないと閲覧出来ないサイトなどを作成することも出来ますが、ここでは割愛します。作成したい場合は「🔍apache2-utils　パスワード」などで検索してください。</p>
+<h2 id="サーバー管理">サーバー管理</h2>
+<p>基本設定では<code>/var/log/apache2/access.log</code>にアクセスログが保存されます。</p>
+<ul>
+<li>リクエストされたURL</li>
+<li>アクセス元のIPアドレス</li>
+<li>ブラウザの種類など</li>
+<li>ステータスコード</li>
+<li>リクエストされた時間</li>
+</ul>
+<p>などが記録されています。サーバー落ち等のトラブル対策や、サーバーに対する攻撃を感知するために利用されます。</p>
+<h1 id="一応の終わり">一応の終わり</h1>
+<p>以上で以下は余談となります。簡略化して紹介するので、詳しく知りたい場合は各自で検索してください。</p>
+<h1 id="sshの設定">SSHの設定</h1>
+<h2 id="sshとは">SSHとは</h2>
+<p>認証機能や暗号化を用いてサーバーセキュリティを強化するためのものです。</p>
+<h2 id="openssh">openssh</h2>
+<p>UbuntuでSSHサーバーを構築するためのソフトウェアです</p>
+<h3 id="インストール">インストール</h3>
+<pre><code>$ sudo apt install openssh-server
+</code></pre>
+<h3 id="起動">起動</h3>
+<pre><code>$ sudo systemctl start ssh
+$ sudo systemctl enable ssh
+$ sudo systemctl status ssh
+</code></pre>
+<h3 id="設定変更">設定変更</h3>
+<p>設定ファイルは<code>/etc/ssh/sshd_config</code>に存在する。
+バックアップ</p>
+<pre><code>$ sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config_backup
+</code></pre>
+<p>使用するポートを変更する。<code>/etc/ssh/sshd_config</code>の内容を以下のように編集する。<br>
+<code>#Port 22</code>→<code>Port 任意のポート番号</code>
+ファイアウォールの設定</p>
+<pre><code>$ sudo ufw allow 設定したポート番号/tcp
+</code></pre>
+<h3 id="接続確認">接続確認</h3>
+<p>他のPCから以下のコマンドを実行します(OSは問わない)</p>
+<pre><code>$ ssh ユーザ名@ホスト名(もしくは IP アドレス) -p ポート番号
+</code></pre>
+<p>接続が出来ればSSHの設定は完了です。アクセスユーザーの限定や二段階認証などを行う場合は、「🔍openssh 設定ファイル」や「🔍openssh 二段階認証」などで検索してください。</p>
+<h1 id="参考資料">参考資料</h1>
+<p>この資料を作る際に参考にさせていただいたwebサイト等です。
+<a href="https://hnavi.co.jp/knowledge/blog/linux-merit/">https://hnavi.co.jp/knowledge/blog/linux-merit/</a>
+<a href="https://glorious-future.co.jp/article/linux-sever-construction/">https://glorious-future.co.jp/article/linux-sever-construction/</a>
+<a href="https://lpi.or.jp/lpic_all/linux/intro/intro02.shtml">https://lpi.or.jp/lpic_all/linux/intro/intro02.shtml</a>
+<a href="https://hnavi.co.jp/knowledge/blog/apache/">https://hnavi.co.jp/knowledge/blog/apache/</a></p>
+
+            <script async src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+            
+        </body>
+        </html>
